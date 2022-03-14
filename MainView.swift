@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct MainView: View {
-    var folders = ["Folder1", "Folder2"]
+    @ObservedObject var note: Notes
     @State var searchString: String = ""
     @State var newFolderName: String = ""
-@State var showingPoper = false
+    @State var showingPopover = false
     var body: some View {
         ZStack {
             NavigationView {
@@ -22,8 +22,11 @@ struct MainView: View {
                                 .font(.title3)
                                 .fontWeight(.bold)
                                 .foregroundColor(.black)) {
-                        ForEach (folders, id: \.self) { foldername in
-                            FolderCell(name: foldername)
+                        if note.folders.count > 0 {
+                            FolderCell(name: "All on my Iphone")
+                        }
+                        ForEach (note.folders) { folder in
+                            FolderCell(name: folder.name)
                         }
                     }
                                 .textCase(nil)
@@ -39,24 +42,19 @@ struct MainView: View {
                     ToolbarItemGroup(placement: .bottomBar) {
                         Image(systemName: "folder.badge.plus")
                             .onTapGesture {
-                                showingPoper.toggle()
+                                showingPopover.toggle()
                             }
                         Image(systemName: "square.and.pencil")
                     }
                 }
             }
-            if showingPoper {
-            NewFolder()
+            if showingPopover {
+                CreateNewFolder($showingPopover, with: note)
             }
         }
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        MainView()
-    }
-}
 
 struct FolderCell: View {
     var name: String
@@ -68,8 +66,15 @@ struct FolderCell: View {
     }
 }
 
-struct NewFolder: View {
-    @State var newFolderName: String = ""
+struct CreateNewFolder: View {
+    @State var newFolderName = ""
+    @ObservedObject var note: Notes
+    @Binding var showingPopover: Bool
+    init(_ showingPopover: Binding<Bool>, with notes: Notes) {
+        self._showingPopover = showingPopover
+        self.note = notes
+    }
+    
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -80,7 +85,7 @@ struct NewFolder: View {
                     Text("NewFolder")
                     Text("Enter a name for this folder.")
                     TextField("Name", text: $newFolderName)
-                        .frame(width: 200, height: 20)
+                        .frame(width: 200, height: 30)
                         .background(.white)
                         .padding()
                         .cornerRadius(7)
@@ -91,7 +96,10 @@ struct NewFolder: View {
                             Text("Cancel")
                                 .frame(maxWidth: .infinity)
                         }
-                        Button(action: {print("Save")}) {
+                        Button(action: {
+                            note.folders.append(Folder(name: newFolderName))
+                            showingPopover.toggle()
+                        }) {
                             Text("Save")
                                 .frame(maxWidth: .infinity)
                         }
@@ -101,5 +109,14 @@ struct NewFolder: View {
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
         }
+    }
+}
+
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        let testNotes = Notes()
+        testNotes.folders = testFolders
+        return MainView(note: testNotes)
     }
 }

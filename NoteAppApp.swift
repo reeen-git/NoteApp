@@ -9,9 +9,10 @@ import SwiftUI
 
 @main
 struct NoteAppApp: App {
+    @StateObject private var note = Notes()
     var body: some Scene {
         WindowGroup {
-            MainView()
+            MainView(note: note)
         }
     }
 }
